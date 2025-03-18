@@ -84,7 +84,7 @@ class SensorPanel:
         return [
             self.hostname_label, self.hostname_entry, self.auto_find_button,
             self.ip_label, self.ip_entry, self.submit_ip_button, 
-            self.battery_icon, self.battery_value
+            self.battery_icon, self.battery_value, self.finder_progress
         ]
         
     def update_battery_status(self, percentage):
