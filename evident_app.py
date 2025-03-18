@@ -913,7 +913,6 @@ class EVidentApp(QMainWindow):
     
     def update_controller_find_progress(self, message, value):
         """Update progress for controller IP finder."""
-        self.shaker_panel.controller_progress.setText(message)
         self.shaker_panel.controller_progress.setValue(value)
         self.shaker_panel.controller_progress.setFormat(message)
     
@@ -958,9 +957,6 @@ class EVidentApp(QMainWindow):
         # Create and run IP finder in a separate thread
         self.sensor_finder = IPFinder(device_name)
         self.sensor_finder_thread = threading.Thread(target=self.sensor_finder.run)
-        
-        # Store sensor ID for use in callbacks
-        self.current_finding_sensor_id = sensor_id
         
         # Connect signals
         self.sensor_finder.progress.connect(lambda msg, val: self.update_sensor_find_progress(sensor_id, msg, val))
