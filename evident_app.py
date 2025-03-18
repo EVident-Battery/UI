@@ -618,11 +618,6 @@ class EVidentApp(QMainWindow):
         
         return panel
     
-    def create_progress_panel(self):
-        """Create the progress monitoring panel."""
-        # This panel is now empty as we've moved the progress elements to the data collection panel
-        return None
-    
     def create_log_panel(self):
         """Create the log panel."""
         panel = QFrame()
@@ -880,7 +875,7 @@ class EVidentApp(QMainWindow):
         """Automatically find shaker controller IP."""
         self.log_message("Searching for shaker controller...", "INFO")
         self.overall_status_label.setText("Searching for shaker controller...")
-        self.controller_progress_bar.setValue(0)
+        self.shaker_panel.controller_progress.setValue(0)
         
         # Create and run IP finder in a separate thread
         self.controller_finder = IPFinder("raspberrypi")
@@ -897,11 +892,16 @@ class EVidentApp(QMainWindow):
     
     def submit_controller_ip(self):
         """Update controller IP from entry field."""
-        ip = self.controller_ip_entry.text().strip()
+        ip = self.shaker_panel.controller_ip_entry.text().strip()
         if ip:
             # Test connection before setting
             if self.test_controller_connection(ip):
                 self.set_controller_ip(ip)
+            else:
+                self.log_message("Failed to connect to shaker controller", "ERROR")
+                self.shaker_panel.controller_progress.setFormat("Failed to connect to shaker controller")
+                # popup a message box to the user
+                QMessageBox.warning(self, "Shaker Controller Connection Error", "Failed to connect to shaker controller")
     
     def test_controller_connection(self, ip):
         """Test connection to the shaker controller."""
@@ -913,9 +913,9 @@ class EVidentApp(QMainWindow):
     
     def update_controller_find_progress(self, message, value):
         """Update progress for controller IP finder."""
-        self.overall_status_label.setText(message)
-        self.controller_progress_bar.setValue(value)
-        self.controller_progress_bar.setFormat(message)
+        self.shaker_panel.controller_progress.setText(message)
+        self.shaker_panel.controller_progress.setValue(value)
+        self.shaker_panel.controller_progress.setFormat(message)
     
     def set_controller_ip(self, ip):
         """Set the controller IP and update the UI."""
@@ -923,8 +923,9 @@ class EVidentApp(QMainWindow):
             ip = f"http://{ip}"
         
         self.shaker_controller.base_url = ip
-        self.controller_ip_entry.setText(ip.replace("http://", ""))
+        self.shaker_panel.controller_ip_entry.setText(ip.replace("http://", ""))
         self.log_message(f"Shaker controller IP set to {ip}", "SUCCESS")
+        self.shaker_panel.controller_progress.setFormat(f"Shaker controller IP set to {ip.replace("http://", "")}")
         self.overall_status_label.setText(f"Shaker controller IP: {ip}")
         
         # Refresh battery status with new IP
