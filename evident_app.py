@@ -13,17 +13,16 @@ from PyQt5.QtWidgets import (
     QFrame, QGraphicsDropShadowEffect, QSizePolicy, QScrollArea, QTextEdit, 
     QRadioButton, QButtonGroup, QGroupBox, QApplication
 )
-from PyQt5.QtCore import Qt, QTimer, QEvent
-from PyQt5.QtGui import QColor, QIntValidator, QDoubleValidator
+from PyQt5.QtCore import Qt, QTimer 
+from PyQt5.QtGui import QColor, QIntValidator 
 import requests
 
 from utils import load_svg_logo
 from shaker_controller import ShakerController
-from sensor_data_collector import SensorDataCollector
 from data_collection_worker import DataCollectionWorker
 from ip_finder import IPFinder
 from custom_events import UpdateShakerBatteryEvent
-from sensor_panel_widget import SensorPanel
+from sensor_shaker_panel_widget import SensorPanel, ShakerPanel
 
 
 class EVidentApp(QMainWindow):
@@ -275,100 +274,13 @@ class EVidentApp(QMainWindow):
         shadow.setColor(QColor(0, 0, 0, 30))
         panel.setGraphicsEffect(shadow)
         
-        # Shaker Frequency section
+        # Shaker Configuration section
         shaker_group = QGroupBox("Shaker Configuration")
         shaker_layout = QVBoxLayout(shaker_group)
         
-        # Shaker battery status indicator (new)
-        shaker_battery_layout = QHBoxLayout()
-        shaker_battery_label = QLabel("Shaker Battery:")
-        self.shaker_battery_icon = QLabel("🔋")
-        self.shaker_battery_icon.setStyleSheet("font-size: 18px; color: #4caf50;")
-        self.shaker_battery_value = QLabel("N/A")
-        self.shaker_battery_value.setStyleSheet("font-weight: bold; color: #4caf50;")
-        refresh_battery_button = QPushButton("Refresh")
-        refresh_battery_button.setMaximumWidth(100)
-        
-        # Add widgets to shaker battery layout
-        shaker_battery_layout.addWidget(shaker_battery_label)
-        shaker_battery_layout.addWidget(self.shaker_battery_icon)
-        shaker_battery_layout.addWidget(self.shaker_battery_value)
-        shaker_battery_layout.addWidget(refresh_battery_button)
-        shaker_battery_layout.addStretch()
-        
-        # Add battery layout to shaker group
-        shaker_layout.addLayout(shaker_battery_layout)
-        
-        # Frequency controls
-        freq_layout = QHBoxLayout()
-        
-        # Frequency dropdown
-        self.freq_selector = QComboBox()
-        self.freq_selector.addItems(["10 RPS", "10.33 RPS", "10.66 RPS", "11 RPS", "11.33 RPS", "11.66 RPS"])
-        
-        # Direct frequency input
-        self.direct_freq_entry = QLineEdit()
-        self.direct_freq_entry.setPlaceholderText("Direct Frequency (RPS)")
-        self.direct_freq_entry.setValidator(QDoubleValidator(0, 2000, 2))
-        
-        # Control buttons
-        start_button = QPushButton("Start")
-        stop_button = QPushButton("Stop")
-        stop_button.setObjectName("stopButton")
-        home_button = QPushButton("Home")
-        
-        # Add widgets to frequency layout
-        freq_layout.addWidget(self.freq_selector)
-        freq_layout.addWidget(self.direct_freq_entry)
-        freq_layout.addWidget(start_button)
-        freq_layout.addWidget(stop_button)
-        freq_layout.addWidget(home_button)
-        
-        # Add frequency layout to shaker group
-        shaker_layout.addSpacing(20)
-        shaker_layout.addLayout(freq_layout)
-        
-        # Shaker controller settings
-        controller_layout = QHBoxLayout()
-        
-        # Shaker controller IP
-        controller_ip_label = QLabel("Controller IP:")
-        self.controller_ip_entry = QLineEdit()
-        self.controller_ip_entry.setText(self.shaker_controller.base_url.replace("http://", ""))
-        self.controller_ip_entry.setPlaceholderText("Controller IP Address")
-        
-        # Auto-find and submit buttons
-        auto_find_controller_button = QPushButton("Auto Find")
-        submit_controller_button = QPushButton("Submit IP")
-
-        # Shaker controller buttons - rearranged to put Calibrate to the left of Auto Raise
-        self.calibrate_button = QPushButton("Calibrate/Set Home")
-        self.auto_raise_button = QPushButton("Auto Up")
-        self.auto_raise_button.setEnabled(False)  # Disabled initially until calibration
-        self.lower_button = QPushButton("Down")
-        
-        # Progress bar for controller IP finder
-        self.controller_progress_bar = QProgressBar()
-        self.controller_progress_bar.setFixedHeight(20)  # Increased height for text
-        self.controller_progress_bar.setValue(0)
-        self.controller_progress_bar.setTextVisible(True)
-        self.controller_progress_bar.setFormat("Ready")
-        
-        
-        # Add widgets to controller layout
-        controller_layout.addWidget(controller_ip_label)
-        controller_layout.addWidget(self.controller_ip_entry)
-        controller_layout.addWidget(auto_find_controller_button)
-        controller_layout.addWidget(submit_controller_button)
-        controller_layout.addWidget(self.calibrate_button)
-        controller_layout.addWidget(self.auto_raise_button)
-        controller_layout.addWidget(self.lower_button)
-        
-        # Add controller layout to shaker group
-        shaker_layout.addLayout(controller_layout)
-        
-        # Add progress bar for controller
-        shaker_layout.addWidget(self.controller_progress_bar)
+        # Create shaker panel
+        self.shaker_panel = ShakerPanel(self.shaker_controller)
+        self.shaker_panel.add_to_layout(shaker_layout)
         
         # Add shaker group to panel layout
         layout.addWidget(shaker_group)
@@ -413,28 +325,12 @@ class EVidentApp(QMainWindow):
         self.sensor2_ui_elements = self.sensor_panel2.get_all_ui_elements()
         
         # Connect signals
-        start_button.clicked.connect(self.start_shaker)
-        stop_button.clicked.connect(self.stop_shaker)
-        home_button.clicked.connect(self.home_shaker)
-        self.calibrate_button.clicked.connect(self.calibrate_shaker)
-        
-        auto_find_controller_button.clicked.connect(self.auto_find_controller)
-        submit_controller_button.clicked.connect(self.submit_controller_ip)
-        
-        self.auto_raise_button.clicked.connect(self.auto_raise_shaker)
-        self.lower_button.pressed.connect(self.lower_shaker_pressed)
-        self.lower_button.released.connect(self.lower_shaker_released)
-        
+        self.shaker_panel.connect_signals(self)
         self.sensor_panel1.connect_signals(self.auto_find_sensor, self.submit_sensor_ip, 1)
         self.sensor_panel2.connect_signals(self.auto_find_sensor, self.submit_sensor_ip, 2)
         
-        self.direct_freq_entry.returnPressed.connect(self.set_direct_frequency)
-        
         # Connect sensor count change signal
         self.sensor_count_group.buttonClicked.connect(self.update_sensor_mode)
-        
-        # Connect signals for battery refresh
-        refresh_battery_button.clicked.connect(self.refresh_shaker_battery)
         
         return panel
     
@@ -576,7 +472,7 @@ class EVidentApp(QMainWindow):
         
         if self.make_selector.currentText() == "Tesla":
             self.model_selector.addItems(["Model Y", "Model 3", "Model S"])
-        else:  # Nissan
+        elif self.make_selector.currentText() == "Nissan":
             self.model_selector.addItems(["Leaf"])
     
     def create_data_collection_panel(self):
@@ -1456,20 +1352,10 @@ class EVidentApp(QMainWindow):
 
     def update_shaker_battery_status(self, voltage):
         """Update the shaker battery status display."""
-        # Update the battery value display
-        self.shaker_battery_value.setText(f"{voltage:.2f}V")
+        # Update battery display through the shaker panel
+        self.shaker_panel.update_battery_status(voltage)
         
-        # Update color based on voltage level (adjust thresholds as needed)
-        if voltage <= 14.0:
-            self.shaker_battery_icon.setStyleSheet("font-size: 18px; color: #f44336;")  # Red
-            self.shaker_battery_value.setStyleSheet("font-weight: bold; color: #f44336;")
-        elif voltage <= 15.0:
-            self.shaker_battery_icon.setStyleSheet("font-size: 18px; color: #ff9800;")  # Orange
-            self.shaker_battery_value.setStyleSheet("font-weight: bold; color: #ff9800;")
-        else:
-            self.shaker_battery_icon.setStyleSheet("font-size: 18px; color: #4caf50;")  # Green
-            self.shaker_battery_value.setStyleSheet("font-weight: bold; color: #4caf50;")
-        
+        # Keep the logging in the main app
         self.log_message(f"Shaker battery voltage: {voltage:.2f}V", "BATTERY")
 
     def event(self, event):
