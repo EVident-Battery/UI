@@ -757,10 +757,10 @@ class EVidentApp(QMainWindow):
         """Start the shaker with the selected frequency."""
         try:
             # Get frequency from dropdown or direct input
-            if self.direct_freq_entry.text():
-                frequency = float(self.direct_freq_entry.text())
+            if self.shaker_panel.direct_freq_entry.text():
+                frequency = float(self.shaker_panel.direct_freq_entry.text())
             else:
-                frequency = float(self.freq_selector.currentText().split()[0])
+                frequency = float(self.shaker_panel.freq_selector.currentText().split()[0])
                 
             if self.shaker_controller.set_frequency(frequency):
                 self.log_message(f"Shaker started at {frequency} Hz", "SUCCESS")
