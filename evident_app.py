@@ -843,7 +843,7 @@ class EVidentApp(QMainWindow):
                 self.overall_status_label.setText("Calibration complete, home position set")
                 
                 # Enable the auto raise button here, after home position is successfully set
-                self.auto_raise_button.setEnabled(True)
+                self.shaker_panel.auto_raise_button.setEnabled(True)
             else:
                 self.log_message(f"Failed to set home position: {response.status_code}", "ERROR")
                 self.overall_status_label.setText(f"Failed to set home position: {response.status_code}")
