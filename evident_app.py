@@ -425,8 +425,8 @@ class EVidentApp(QMainWindow):
         self.lower_button.pressed.connect(self.lower_shaker_pressed)
         self.lower_button.released.connect(self.lower_shaker_released)
         
-        self.sensor_panel1.connect_signals(self, 1)
-        self.sensor_panel2.connect_signals(self, 2)
+        self.sensor_panel1.connect_signals(self.auto_find_sensor, self.submit_sensor_ip, 1)
+        self.sensor_panel2.connect_signals(self.auto_find_sensor, self.submit_sensor_ip, 2)
         
         self.direct_freq_entry.returnPressed.connect(self.set_direct_frequency)
         

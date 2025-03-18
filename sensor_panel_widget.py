@@ -73,10 +73,10 @@ class SensorPanel:
         parent_layout.addLayout(self.ip_layout)
         parent_layout.addWidget(self.finder_progress)
         
-    def connect_signals(self, parent, sensor_id):
+    def connect_signals(self, parent_func1, parent_func2, sensor_id):
         """Connect signals for this sensor panel"""
-        self.auto_find_button.clicked.connect(lambda: parent.auto_find_sensor(sensor_id))
-        self.submit_ip_button.clicked.connect(lambda: parent.submit_sensor_ip(sensor_id))
+        self.auto_find_button.clicked.connect(lambda: parent_func1(sensor_id))
+        self.submit_ip_button.clicked.connect(lambda: parent_func2(sensor_id))
         
     def get_all_ui_elements(self):
         """Return a list of all UI elements for this sensor"""
