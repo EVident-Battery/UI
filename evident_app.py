@@ -25,6 +25,108 @@ from ip_finder import IPFinder
 from custom_events import UpdateShakerBatteryEvent
 
 
+class SensorPanel:
+    """UI panel for sensor configuration including hostname, IP, battery status and progress"""
+    
+    def __init__(self, sensor_id, hostname_default, ip_default):
+        self.sensor_id = sensor_id
+        self.hostname_default = hostname_default
+        self.ip_default = ip_default
+        
+        # Create all UI components
+        self.create_ui_elements()
+        
+    def create_ui_elements(self):
+        """Create all UI elements for this sensor panel"""
+        # Hostname row
+        self.hostname_layout = QHBoxLayout()
+        self.hostname_label = QLabel(f"Sensor {self.sensor_id} Hostname:")
+        
+        self.hostname_entry = QLineEdit()
+        self.hostname_entry.setText(self.hostname_default)
+        self.hostname_entry.setPlaceholderText(f"Sensor {self.sensor_id} Hostname")
+        
+        self.auto_find_button = QPushButton("Auto Find")
+        
+        # Add to hostname layout
+        self.hostname_layout.addWidget(self.hostname_label)
+        self.hostname_layout.addWidget(self.hostname_entry)
+        self.hostname_layout.addWidget(self.auto_find_button)
+        
+        # IP row
+        self.ip_layout = QHBoxLayout()
+        self.ip_label = QLabel(f"Sensor {self.sensor_id} IP:")
+        
+        self.ip_entry = QLineEdit()
+        self.ip_entry.setText(self.ip_default)
+        self.ip_entry.setPlaceholderText(f"Sensor {self.sensor_id} IP Address")
+        
+        self.submit_ip_button = QPushButton("Submit IP")
+        
+        # Battery status indicator
+        self.battery_icon = QLabel("🔋")
+        self.battery_icon.setStyleSheet("font-size: 18px;")
+        self.battery_value = QLabel("N/A")
+        self.battery_value.setStyleSheet("font-weight: bold; color: #4caf50;")
+        
+        # Add to IP layout
+        self.ip_layout.addWidget(self.ip_label)
+        self.ip_layout.addWidget(self.ip_entry)
+        self.ip_layout.addWidget(self.submit_ip_button)
+        self.ip_layout.addWidget(self.battery_icon)
+        self.ip_layout.addWidget(self.battery_value)
+        
+        # Progress bar for IP finder
+        self.finder_progress = QProgressBar()
+        self.finder_progress.setFixedHeight(20)
+        self.finder_progress.setValue(0)
+        self.finder_progress.setTextVisible(True)
+        self.finder_progress.setFormat("Ready")
+        
+        # Collection progress elements
+        self.status_label = QLabel("Ready")
+        self.status_label.setStyleSheet("color: #2962ff; font-weight: bold;")
+        
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setFixedHeight(20)
+        self.progress_bar.setTextVisible(True)
+        self.progress_bar.setFormat("Ready")
+        
+    def add_to_layout(self, parent_layout):
+        """Add all panel elements to the provided parent layout"""
+        parent_layout.addLayout(self.hostname_layout)
+        parent_layout.addLayout(self.ip_layout)
+        parent_layout.addWidget(self.finder_progress)
+        
+    def connect_signals(self, parent, sensor_id):
+        """Connect signals for this sensor panel"""
+        self.auto_find_button.clicked.connect(lambda: parent.auto_find_sensor(sensor_id))
+        self.submit_ip_button.clicked.connect(lambda: parent.submit_sensor_ip(sensor_id))
+        
+    def get_all_ui_elements(self):
+        """Return a list of all UI elements for this sensor"""
+        return [
+            self.hostname_label, self.hostname_entry, self.auto_find_button,
+            self.ip_label, self.ip_entry, self.submit_ip_button, 
+            self.battery_icon, self.battery_value
+        ]
+        
+    def update_battery_status(self, percentage):
+        """Update battery status display"""
+        self.battery_value.setText(f"{percentage:.0f}%")
+        
+        # Update color based on level
+        if percentage <= 20:
+            self.battery_icon.setStyleSheet("font-size: 18px; color: #f44336;")  # Red
+            self.battery_value.setStyleSheet("font-weight: bold; color: #f44336;")
+        elif percentage <= 40:
+            self.battery_icon.setStyleSheet("font-size: 18px; color: #ff9800;")  # Orange
+            self.battery_value.setStyleSheet("font-weight: bold; color: #ff9800;")
+        else:
+            self.battery_icon.setStyleSheet("font-size: 18px; color: #4caf50;")  # Green
+            self.battery_value.setStyleSheet("font-weight: bold; color: #4caf50;")
+
+
 class EVidentApp(QMainWindow):
     """Main application window for the EVident Battery Control Panel."""
     
@@ -397,117 +499,19 @@ class EVidentApp(QMainWindow):
         
         sensor_layout.addLayout(sensor_count_layout)
         
-        # Sensor 1 configuration
-        # Hostname row
-        sensor1_hostname_layout = QHBoxLayout()
-        sensor1_hostname_label = QLabel("Sensor 1 Hostname:")
-        
-        self.hostname_entry1 = QLineEdit()
-        self.hostname_entry1.setText("EVident_Battery_Sensor_1")
-        self.hostname_entry1.setPlaceholderText("Sensor 1 Hostname")
-        
-        auto_find_sensor1_button = QPushButton("Auto Find")
-        
-        # Add to hostname layout
-        sensor1_hostname_layout.addWidget(sensor1_hostname_label)
-        sensor1_hostname_layout.addWidget(self.hostname_entry1)
-        sensor1_hostname_layout.addWidget(auto_find_sensor1_button)
-        
-        # IP row
-        sensor1_layout = QHBoxLayout()
-        sensor1_label = QLabel("Sensor 1 IP:")
-        
-        self.ip_entry1 = QLineEdit()
-        self.ip_entry1.setText(self.sensor_ip1)
-        self.ip_entry1.setPlaceholderText("Sensor 1 IP Address")
-        
-        submit_sensor1_button = QPushButton("Submit IP")
-        
-        # Battery status indicator for Sensor 1
-        self.battery_icon1 = QLabel("🔋")
-        self.battery_icon1.setStyleSheet("font-size: 18px;")
-        self.battery_value1 = QLabel("N/A")
-        self.battery_value1.setStyleSheet("font-weight: bold; color: #4caf50;")
-        
-        # Add to IP layout
-        sensor1_layout.addWidget(sensor1_label)
-        sensor1_layout.addWidget(self.ip_entry1)
-        sensor1_layout.addWidget(submit_sensor1_button)
-        sensor1_layout.addWidget(self.battery_icon1)
-        sensor1_layout.addWidget(self.battery_value1)
-        
-        # Progress bar for sensor 1 IP finder
-        self.sensor1_finder_progress = QProgressBar()
-        self.sensor1_finder_progress.setFixedHeight(20)
-        self.sensor1_finder_progress.setValue(0)
-        self.sensor1_finder_progress.setTextVisible(True)
-        self.sensor1_finder_progress.setFormat("Ready")
+        # Create sensor panels
+        self.sensor_panel1 = SensorPanel(1, "EVident_Battery_Sensor_1", self.sensor_ip1)
+        self.sensor_panel2 = SensorPanel(2, "EVident_Battery_Sensor_2", self.sensor_ip2)
         
         # Add to sensor layout
-        sensor_layout.addLayout(sensor1_hostname_layout)
-        sensor_layout.addLayout(sensor1_layout)
-        sensor_layout.addWidget(self.sensor1_finder_progress)
-        
-        # Sensor 2 configuration
-        # Hostname row
-        sensor2_hostname_layout = QHBoxLayout()
-        sensor2_hostname_label = QLabel("Sensor 2 Hostname:")
-        
-        self.hostname_entry2 = QLineEdit()
-        self.hostname_entry2.setText("EVident_Battery_Sensor_2")
-        self.hostname_entry2.setPlaceholderText("Sensor 2 Hostname")
-        
-        auto_find_sensor2_button = QPushButton("Auto Find")
-        
-        # Add to hostname layout
-        sensor2_hostname_layout.addWidget(sensor2_hostname_label)
-        sensor2_hostname_layout.addWidget(self.hostname_entry2)
-        sensor2_hostname_layout.addWidget(auto_find_sensor2_button)
-        
-        # IP row
-        sensor2_layout = QHBoxLayout()
-        sensor2_label = QLabel("Sensor 2 IP:")
-        
-        self.ip_entry2 = QLineEdit()
-        self.ip_entry2.setText(self.sensor_ip2)
-        self.ip_entry2.setPlaceholderText("Sensor 2 IP Address")
-        
-        submit_sensor2_button = QPushButton("Submit IP")
-        
-        # Battery status indicator for Sensor 2
-        self.battery_icon2 = QLabel("🔋")
-        self.battery_icon2.setStyleSheet("font-size: 18px;")
-        self.battery_value2 = QLabel("N/A")
-        self.battery_value2.setStyleSheet("font-weight: bold; color: #4caf50;")
-        
-        # Add to IP layout
-        sensor2_layout.addWidget(sensor2_label)
-        sensor2_layout.addWidget(self.ip_entry2)
-        sensor2_layout.addWidget(submit_sensor2_button)
-        sensor2_layout.addWidget(self.battery_icon2)
-        sensor2_layout.addWidget(self.battery_value2)
-        
-        # Progress bar for sensor 2 IP finder
-        self.sensor2_finder_progress = QProgressBar()
-        self.sensor2_finder_progress.setFixedHeight(20)
-        self.sensor2_finder_progress.setValue(0)
-        self.sensor2_finder_progress.setTextVisible(True)
-        self.sensor2_finder_progress.setFormat("Ready")
-        
-        # Add to sensor layout
-        sensor_layout.addLayout(sensor2_hostname_layout)
-        sensor_layout.addLayout(sensor2_layout)
-        sensor_layout.addWidget(self.sensor2_finder_progress)
+        self.sensor_panel1.add_to_layout(sensor_layout)
+        self.sensor_panel2.add_to_layout(sensor_layout)
         
         # Add sensor group to panel layout
         layout.addWidget(sensor_group)
         
         # Store sensor 2 UI elements for enabling/disabling
-        self.sensor2_ui_elements = [
-            sensor2_hostname_label, self.hostname_entry2, auto_find_sensor2_button,
-            sensor2_label, self.ip_entry2, submit_sensor2_button, 
-            self.battery_icon2, self.battery_value2
-        ]
+        self.sensor2_ui_elements = self.sensor_panel2.get_all_ui_elements()
         
         # Connect signals
         start_button.clicked.connect(self.start_shaker)
@@ -522,10 +526,8 @@ class EVidentApp(QMainWindow):
         self.lower_button.pressed.connect(self.lower_shaker_pressed)
         self.lower_button.released.connect(self.lower_shaker_released)
         
-        auto_find_sensor1_button.clicked.connect(lambda: self.auto_find_sensor(1))
-        submit_sensor1_button.clicked.connect(lambda: self.submit_sensor_ip(1))
-        auto_find_sensor2_button.clicked.connect(lambda: self.auto_find_sensor(2))
-        submit_sensor2_button.clicked.connect(lambda: self.submit_sensor_ip(2))
+        self.sensor_panel1.connect_signals(self, 1)
+        self.sensor_panel2.connect_signals(self, 2)
         
         self.direct_freq_entry.returnPressed.connect(self.set_direct_frequency)
         
@@ -759,11 +761,9 @@ class EVidentApp(QMainWindow):
         # Sensor 1 Progress
         sensor1_progress_layout = QHBoxLayout()
         sensor1_progress_label = QLabel("Sensor 1:")
-        self.sensor1_status_label = QLabel("Ready")
-        self.sensor1_status_label.setStyleSheet("color: #2962ff; font-weight: bold;")
         
         sensor1_progress_layout.addWidget(sensor1_progress_label)
-        sensor1_progress_layout.addWidget(self.sensor1_status_label)
+        sensor1_progress_layout.addWidget(self.sensor_panel1.status_label)
         sensor1_progress_layout.addStretch()
         
         self.sensor1_progress_bar = QProgressBar()
@@ -774,11 +774,9 @@ class EVidentApp(QMainWindow):
         # Sensor 2 Progress
         sensor2_progress_layout = QHBoxLayout()
         sensor2_progress_label = QLabel("Sensor 2:")
-        self.sensor2_status_label = QLabel("Ready")
-        self.sensor2_status_label.setStyleSheet("color: #2962ff; font-weight: bold;")
         
         sensor2_progress_layout.addWidget(sensor2_progress_label)
-        sensor2_progress_layout.addWidget(self.sensor2_status_label)
+        sensor2_progress_layout.addWidget(self.sensor_panel2.status_label)
         sensor2_progress_layout.addStretch()
         
         self.sensor2_progress_bar = QProgressBar()
@@ -813,8 +811,8 @@ class EVidentApp(QMainWindow):
         # Add sensor 2 UI elements to the list
         self.sensor2_ui_elements.extend([
             sensor2_progress_label, 
-            self.sensor2_status_label,
-            self.sensor2_progress_bar
+            self.sensor_panel2.status_label,
+            self.sensor_panel2.progress_bar
         ])
         
         # Connect signals - removed the abortion_collection_button connection
@@ -912,34 +910,8 @@ class EVidentApp(QMainWindow):
     
     def update_battery_status(self, sensor_id, percentage):
         """Update battery status display."""
-        if sensor_id == 1:
-            self.battery_value1.setText(f"{percentage:.0f}%")
-            
-            # Update color based on level
-            if percentage <= 20:
-                self.battery_icon1.setStyleSheet("font-size: 18px; color: #f44336;")  # Red
-                self.battery_value1.setStyleSheet("font-weight: bold; color: #f44336;")
-            elif percentage <= 40:
-                self.battery_icon1.setStyleSheet("font-size: 18px; color: #ff9800;")  # Orange
-                self.battery_value1.setStyleSheet("font-weight: bold; color: #ff9800;")
-            else:
-                self.battery_icon1.setStyleSheet("font-size: 18px; color: #4caf50;")  # Green
-                self.battery_value1.setStyleSheet("font-weight: bold; color: #4caf50;")
-        
-        elif sensor_id == 2:
-            self.battery_value2.setText(f"{percentage:.0f}%")
-            
-            # Update color based on level
-            if percentage <= 20:
-                self.battery_icon2.setStyleSheet("font-size: 18px; color: #f44336;")  # Red
-                self.battery_value2.setStyleSheet("font-weight: bold; color: #f44336;")
-            elif percentage <= 40:
-                self.battery_icon2.setStyleSheet("font-size: 18px; color: #ff9800;")  # Orange
-                self.battery_value2.setStyleSheet("font-weight: bold; color: #ff9800;")
-            else:
-                self.battery_icon2.setStyleSheet("font-size: 18px; color: #4caf50;")  # Green
-                self.battery_value2.setStyleSheet("font-weight: bold; color: #4caf50;")
-        
+        sensor_panel = self.sensor_panel1 if sensor_id == 1 else self.sensor_panel2
+        sensor_panel.update_battery_status(percentage)
         self.log_message(f"Sensor {sensor_id} battery: {percentage:.0f}%", "BATTERY")
     
     def log_message(self, message, category=None):
@@ -1135,8 +1107,6 @@ class EVidentApp(QMainWindow):
             # Test connection before setting
             if self.test_controller_connection(ip):
                 self.set_controller_ip(ip)
-            else:
-                self.log_message(f"Cannot connect to controller at {ip}", "ERROR")
     
     def test_controller_connection(self, ip):
         """Test connection to the shaker controller."""
@@ -1177,10 +1147,8 @@ class EVidentApp(QMainWindow):
     def auto_find_sensor(self, sensor_id):
         """Automatically find sensor IP."""
         # Get the hostname from the input field
-        if sensor_id == 1:
-            device_name = self.hostname_entry1.text().strip()
-        else:
-            device_name = self.hostname_entry2.text().strip()
+        sensor_panel = self.sensor_panel1 if sensor_id == 1 else self.sensor_panel2
+        device_name = sensor_panel.hostname_entry.text().strip()
             
         if not device_name:
             self.show_error(f"Please enter a hostname for Sensor {sensor_id}")
@@ -1189,10 +1157,7 @@ class EVidentApp(QMainWindow):
         self.log_message(f"Searching for sensor {sensor_id} with hostname: {device_name}...", "INFO")
         
         # Reset the progress bar
-        if sensor_id == 1:
-            self.sensor1_finder_progress.setValue(0)
-        else:
-            self.sensor2_finder_progress.setValue(0)
+        sensor_panel.finder_progress.setValue(0)
         
         # Create and run IP finder in a separate thread
         self.sensor_finder = IPFinder(device_name)
@@ -1212,31 +1177,27 @@ class EVidentApp(QMainWindow):
     
     def update_sensor_find_progress(self, sensor_id, message, value):
         """Update progress for sensor IP finder."""
-        if sensor_id == 1:
-            self.sensor1_status_label.setText(message)
-            self.sensor1_finder_progress.setValue(value)
-            self.sensor1_finder_progress.setFormat(message)
-        else:
-            self.sensor2_status_label.setText(message)
-            self.sensor2_finder_progress.setValue(value)
-            self.sensor2_finder_progress.setFormat(message)
+        sensor_panel = self.sensor_panel1 if sensor_id == 1 else self.sensor_panel2
+        sensor_panel.status_label.setText(message)
+        sensor_panel.finder_progress.setValue(value)
+        sensor_panel.finder_progress.setFormat(message)
     
     def set_sensor_ip(self, sensor_id, ip):
         """Set the sensor IP and update the UI."""
+        sensor_panel = self.sensor_panel1 if sensor_id == 1 else self.sensor_panel2
+        sensor_panel.ip_entry.setText(ip)
+        
         if sensor_id == 1:
-            self.ip_entry1.setText(ip)
             self.sensor_ip1 = ip
         else:
-            self.ip_entry2.setText(ip)
             self.sensor_ip2 = ip
+        
         self.log_message(f"Sensor {sensor_id} IP set to {ip}", "SUCCESS")
     
     def submit_sensor_ip(self, sensor_id):
         """Update sensor IP from entry field."""
-        if sensor_id == 1:
-            ip = self.ip_entry1.text().strip()
-        else:
-            ip = self.ip_entry2.text().strip()
+        sensor_panel = self.sensor_panel1 if sensor_id == 1 else self.sensor_panel2
+        ip = sensor_panel.ip_entry.text().strip()
             
         if ip:
             self.set_sensor_ip(sensor_id, ip)
@@ -1312,12 +1273,12 @@ class EVidentApp(QMainWindow):
         }
         
         # Reset progress UI for data collection
-        self.sensor1_progress_bar.setValue(0)
-        self.sensor2_progress_bar.setValue(0)
-        self.sensor1_progress_bar.setFormat("Ready")  # Reset format
-        self.sensor2_progress_bar.setFormat("Ready")  # Reset format
-        self.sensor1_status_label.setText("Starting...")
-        self.sensor2_status_label.setText("Starting..." if self.dual_sensor_mode else "Disabled")
+        self.sensor_panel1.progress_bar.setValue(0)
+        self.sensor_panel2.progress_bar.setValue(0)
+        self.sensor_panel1.progress_bar.setFormat("Ready")  # Reset format
+        self.sensor_panel2.progress_bar.setFormat("Ready")  # Reset format
+        self.sensor_panel1.status_label.setText("Starting...")
+        self.sensor_panel2.status_label.setText("Starting..." if self.dual_sensor_mode else "Disabled")
         self.overall_status_label.setText("Starting data collection...")
         
         # Generate a new test ID for this run
@@ -1425,14 +1386,10 @@ class EVidentApp(QMainWindow):
 
     def update_sensor_collection_progress(self, sensor_id, message, progress):
         """Update the progress display for a sensor during data collection."""
-        if sensor_id == 1:
-            self.sensor1_status_label.setText(message)
-            self.sensor1_progress_bar.setValue(progress)
-            self.sensor1_progress_bar.setFormat(message)
-        else:
-            self.sensor2_status_label.setText(message)
-            self.sensor2_progress_bar.setValue(progress)
-            self.sensor2_progress_bar.setFormat(message)
+        sensor_panel = self.sensor_panel1 if sensor_id == 1 else self.sensor_panel2
+        sensor_panel.status_label.setText(message)
+        sensor_panel.progress_bar.setValue(progress)
+        sensor_panel.progress_bar.setFormat(message)
         
         self.log_message(message, f"SENSOR {sensor_id}")
 
