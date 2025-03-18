@@ -6,6 +6,14 @@ class ShakerController:
     def __init__(self, base_url="http://10.1.10.195"):
         self.base_url = base_url
     
+    def ping(self):
+        """Ping the shaker controller."""
+        try:
+            response = requests.get(f"{self.base_url}", timeout=2)
+            return response.status_code == 200
+        except:
+            return False
+    
     def set_frequency(self, frequency):
         """Set the shaker frequency."""
         try:
