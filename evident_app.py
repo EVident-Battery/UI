@@ -1,4 +1,5 @@
 import os
+import re
 import time
 import threading
 import random
@@ -6,6 +7,7 @@ import string
 import socket
 import zipfile
 import boto3
+from botocore.exceptions import ClientError
 from datetime import datetime
 from PyQt5.QtWidgets import (
     QMainWindow, QWidget, QComboBox, QPushButton, QHBoxLayout, 
@@ -1187,18 +1189,37 @@ class EVidentApp(QMainWindow):
         sensor_panel.progress_bar.setFormat(message)
         
         self.log_message(message, f"SENSOR {sensor_id}")
+    
+    def show_warning_dialog(self, title, message):
+        """Show a warning message box to the user."""
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Warning)
+        msg.setText(message)
+        msg.setWindowTitle(title)
+        msg.setStandardButtons(QMessageBox.Ok)
+        msg.exec_()
 
     def save_to_aws(self):
         if self.save_path is None:
             self.log_message("Please set the save location first.", "ERROR")
             return
 
-        folder_name = os.path.basename(self.save_path)
+        # Check if any required field is empty
+        if not (self.vin_entry.text().strip() and self.make_selector.currentText() and 
+                self.model_selector.currentText() and self.year_selector.currentText() and
+                self.mileage_entry.text() and self.soc_selector.currentText() and self.test_id):
+            
+            # Log error if any field is empty
+            self.log_message("Failed to save: Please ensure all vehicle information are filled.", "ERROR")
+            
+            self.show_warning_dialog("Missing Information", "Please ensure all vehicle information are filled.")
+        
+            return
 
         # VIN_Make_Model_Year_Mileage_SoC_Code
-        folder_name = self.vin_entry.text().strip() + self.make_selector.currentText() + \
-            self.model_selector.currentText() + self.year_selector.currentText() + \
-            self.mileage_entry.text() + self.soc_selector.currentText() + self.file_prefix_entry.text()
+        folder_name = self.vin_entry.text().strip() + '_' + self.make_selector.currentText() + '_' + \
+            self.model_selector.currentText() + '_' + self.year_selector.currentText() + '_' + \
+            self.mileage_entry.text() + '_' + self.soc_selector.currentText() + '_' + self.test_id
         
         zip_filename = os.path.join(self.save_path, f"{folder_name}.zip")
         
@@ -1226,13 +1247,25 @@ class EVidentApp(QMainWindow):
                         # Get the relative path for a clean folder structure in the archive.
                         relative_path = os.path.relpath(file_path, self.save_path)
                         zipf.write(file_path, arcname=relative_path)
-            self.log_message(f"Successfully created zip file: {zip_filename}", "INFO")
-            self.upload_zip_to_aws(zip_filename)
+
+            upload_result = self.upload_zip_to_aws(zip_filename)
+
+            if upload_result:
+                # Show success dialog if upload to AWS is successful
+                self.show_warning_dialog("Upload Successful", f"Data uploaded to AWS successfully!")
+            else:
+                # Show error dialog if upload to AWS fails
+                self.show_warning_dialog("Upload Failed", "Failed to upload data to AWS.")
+        
         except PermissionError:
             self.log_message("Please check your folder permissions.", "ERROR")
+            self.show_warning_dialog("Permission Error", "Please check your folder permissions.")
         except Exception as e:
+            self.show_warning_dialog("Error", f"Error occurred while uploading data: {str(e)}")
             self.log_message(f"Error zipping files: {str(e)}", "ERROR")
-
+        
+        self.saved_to_aws = True
+        os.remove(zip_filename)  # Delete the zip file
 
     def upload_zip_to_aws(self, zip_filename):
         """
@@ -1255,20 +1288,99 @@ class EVidentApp(QMainWindow):
 
         except Exception as e:
             self.log_message(f"Error uploading to AWS: {str(e)}", "ERROR")
- 
 
     def submit_email(self):
         """Submit the email address from the entry field."""
         email = self.email_entry.text().strip()
+        
+        # Email validation regex
+        email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        
+        # Check if email is valid
+        if not re.match(email_regex, email):
+            self.log_message("Please enter a valid email address", "ERROR")
+            self.show_warning_dialog("Invalid Email", "Please enter a valid email address")
+            return
+
         if email:
-            self.change_me(email)
+            if self.saved_to_aws is False:
+                self.log_message("Please save to AWS first.", "ERROR")
+                self.show_warning_dialog("Missing Save", "Please save to AWS first.")
+                return
+            
+            # Send email via AWS SES
+            result = self.send_email_via_aws(email)
+            self.log_message(result, "INFO")
+            
+            # Show the result of sending the email
+            if "success" in result.lower():
+                self.show_warning_dialog("Email Sent", "Email sent successfully!")
+            else:
+                self.show_warning_dialog("Email Failed", "Failed to send email.")
         else:
             self.log_message("Please enter an email address", "ERROR")
+            self.show_warning_dialog("Missing Email", "Please enter an email address") 
 
-    def change_me(self, email):
-        """Function to process the submitted email."""
-        self.log_message(f"Email submitted: {email}", "INFO")
-        # Additional processing can be added here in the future
+    def send_email_via_aws(self, recipient_email):
+        SENDER = "EVident Battery <no-reply@batteryevidence.com>"  # Sender email address (must be verified in SES)
+        AWS_REGION = "us-east-1"  # AWS SES region, adjust as needed
+        SUBJECT = "Confidential Access Code to Your Data"
+        BODY_TEXT = f"""\
+Hi,
+
+To securely access your data stored online, please use the confidential access code below:
+
+**{self.test_id}**
+
+This code is unique to you and should not be shared with anyone. Keeping this information secure ensures your data remains protected.
+
+If you have any issues or need further assistance, please contact us at info@batteryevidence.com.
+
+Best regards,  
+EVident Battery Team
+"""
+        CHARSET = "UTF-8"
+
+        access_key_id = "AKIAQFLZDVDWBVMKDIWB"
+        secret_access_key = "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"
+
+        # Create an AWS SES client
+        client = boto3.client(
+            'ses', 
+            region_name=AWS_REGION,
+            aws_access_key_id = access_key_id,
+            aws_secret_access_key = secret_access_key
+        )
+
+        try:
+            # Use the send_email method to send the email
+            response = client.send_email(
+                Destination={
+                    'ToAddresses': [recipient_email],
+                },
+                Message={
+                    'Body': {
+                        'Text': {
+                            'Charset': CHARSET,
+                            'Data': BODY_TEXT,
+                        },
+                    },
+                    'Subject': {
+                        'Charset': CHARSET,
+                        'Data': SUBJECT,
+                    },
+                },
+                Source=SENDER,
+            )
+        except ClientError as e:
+            # Capture exceptions that occur during email sending and return the error message
+            return f"Email sending failed: {e.response['Error']['Message']}"
+        else:
+            # Return the MessageId upon successful email sending
+            return f"The retrieval code has been successfully sent to {recipient_email}."
+
+
+
 
     def test_sensor_connection(self, sensor_id):
         """Test connection to a sensor and report result."""
