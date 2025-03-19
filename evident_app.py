@@ -673,8 +673,11 @@ class EVidentApp(QMainWindow):
         return panel
     
     def generate_test_id(self):
-        """Generate a random 8-character alphanumeric test ID."""
-        return ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+        """A 10-character string representing the current timestamp as the test ID."""
+        timestamp = int(time.time())
+        test_id = str(timestamp)
+        
+        return test_id
     
     def update_sensor_mode_ui(self):
         """Update UI elements based on sensor mode."""
