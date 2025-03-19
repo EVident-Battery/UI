@@ -46,6 +46,7 @@ class EVidentApp(QMainWindow):
         self.had_redos_in_sequence = False  # Keep this as it might be used for other purposes
         self.redo_triggered = False  # Flag to prevent multiple redos
         self.had_outliers = False    # Flag to track if outliers were detected
+        self.saved_to_aws = False  # Flag to track if data was saved to AWS
         
         # Setup UI
         self.initUI()
@@ -1285,9 +1286,10 @@ class EVidentApp(QMainWindow):
 
             s3.upload_file(zip_filename, bucket_name, s3_key)
             self.log_message(f"Successfully uploaded {zip_filename} to {bucket_name}/{s3_key}", "SUCCESS")
-
+            return True  # Return True if upload is successful
         except Exception as e:
             self.log_message(f"Error uploading to AWS: {str(e)}", "ERROR")
+            return False  # Return False if there was an error
 
     def submit_email(self):
         """Submit the email address from the entry field."""
