@@ -1184,10 +1184,14 @@ class EVidentApp(QMainWindow):
 
     def update_sensor_collection_progress(self, sensor_id, message, progress):
         """Update the progress display for a sensor during data collection."""
-        sensor_panel = self.sensor_panel1 if sensor_id == 1 else self.sensor_panel2
-        sensor_panel.status_label.setText(message)
-        sensor_panel.progress_bar.setValue(progress)
-        sensor_panel.progress_bar.setFormat(message)
+        if sensor_id == 1:
+            self.sensor1_progress_bar.setValue(progress)
+            self.sensor1_progress_bar.setFormat(message)
+            self.sensor_panel1.status_label.setText(message)
+        else:  # sensor_id == 2
+            self.sensor2_progress_bar.setValue(progress)
+            self.sensor2_progress_bar.setFormat(message)
+            self.sensor_panel2.status_label.setText(message)
         
         self.log_message(message, f"SENSOR {sensor_id}")
     
