@@ -7,3 +7,4 @@
 *.tiff
 *.ico
 *.webp
+.env
