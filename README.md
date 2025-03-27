@@ -23,6 +23,7 @@
 The EVident Battery Control Panel is a PyQt5-based application designed for collecting and analyzing inertial measurement unit (IMU) data from sensors attached to electric vehicle batteries. The system interfaces with specialized sensor hardware and a shaker device to perform controlled vibration tests on battery packs while collecting accelerometer and gyroscope data.
 
 The application supports both single and dual sensor configurations, with features for:
+
 - Hardware discovery and connection
 - Shaker control (frequency, movement, and calibration)
 - Synchronized data collection
@@ -66,6 +67,7 @@ class EVidentApp(QMainWindow):
 ```
 
 Key responsibilities:
+
 - Building and managing the user interface
 - Handling user interactions
 - Coordinating data collection
@@ -80,12 +82,13 @@ Handles direct communication with sensor hardware via TCP/IP sockets.
 ```python
 class SensorDataCollector:
     """Class for handling sensor data collection and processing."""
-    
+
     def __init__(self, sensor_ip, port=8888, buffer_size=65536):
         # ...
 ```
 
 Key responsibilities:
+
 - Establishing TCP connections to sensors
 - Streaming data from sensors
 - Parsing raw sensor data packets
@@ -100,7 +103,7 @@ Manages threaded data collection and processing activities.
 ```python
 class DataCollectionWorker(QObject):
     """Worker thread for data collection from sensors."""
-    
+
     # Define signals
     progress = pyqtSignal(str, int)
     sensor_progress = pyqtSignal(int, str, int)  # sensor_id, message, progress_value
@@ -108,6 +111,7 @@ class DataCollectionWorker(QObject):
 ```
 
 Key responsibilities:
+
 - Running sensor data collection in background threads
 - Coordinating simultaneous data collection from multiple sensors
 - Providing progress updates via Qt signals
@@ -123,12 +127,13 @@ Manages communication with the shaker device through HTTP requests.
 ```python
 class ShakerController:
     """Class to handle communication with the shaker controller."""
-    
+
     def __init__(self, base_url="http://10.1.10.195"):
         # ...
 ```
 
 Key responsibilities:
+
 - Setting shaker frequency
 - Controlling shaker movement
 - Managing calibration
@@ -142,13 +147,14 @@ Facilitates discovery of devices on the network.
 ```python
 class IPFinder(QObject):
     """Class for finding IP addresses of connected devices."""
-    
+
     # Define signals
     progress = pyqtSignal(str, int)  # message, progress_value
     # ...
 ```
 
 Key responsibilities:
+
 - Running network scans in the background
 - Identifying devices by hostname
 - Providing progress updates
@@ -169,6 +175,7 @@ class ShakerPanel:
 ```
 
 Key responsibilities:
+
 - Organizing related UI elements
 - Providing a clean interface for the main application
 - Managing UI state for sensors and shaker
@@ -231,12 +238,14 @@ EVidentApp (QMainWindow)
 The data collection process involves several coordinated steps:
 
 1. **Preparation Phase**
+
    - Validate connection to sensors
    - Validate user input fields
    - Generate unique test ID
    - Prepare file paths
 
 2. **Collection Phase**
+
    - Create worker object with configuration
    - Start worker thread for non-blocking operation
    - Connect worker signals to UI update methods
@@ -248,6 +257,7 @@ The data collection process involves several coordinated steps:
      - Monitor for errors or data quality issues
 
 3. **Processing Phase**
+
    - Calculate time deltas between samples
    - Check for timing outliers
    - Format data for CSV output
@@ -305,11 +315,13 @@ The application uses Python's threading module to handle concurrent operations w
 ### Threading Strategy
 
 1. **Main Thread**
+
    - Handles UI rendering and user interactions
    - Coordinates worker threads
    - Processes UI update signals from workers
 
 2. **Collection Worker Threads**
+
    - One thread per active sensor for parallel data collection
    - Use thread-safe signal mechanisms to communicate with main thread
    - Join with timeout to allow checking for cancellation
@@ -344,7 +356,7 @@ For cases where direct signal-slot connection is inadequate, custom events are u
 class UpdateShakerBatteryEvent(QEvent):
     """Custom event for updating shaker battery status."""
     EVENT_TYPE = QEvent.registerEventType()
-    
+
     def __init__(self, voltage):
         super().__init__(UpdateShakerBatteryEvent.EVENT_TYPE)
         self.voltage = voltage
@@ -376,7 +388,7 @@ try:
     data = self.socket.recv(self.buffer_size)
     if not data:
         break
-        
+
     data_str = data_fragment + data.decode()
     # ... process data
 except socket.timeout:
@@ -394,10 +406,10 @@ data_fragment = lines[-1]
 for line in lines[:-1]:
     if not line.strip():
         continue
-    
+
     if line.startswith("BATTERY:"):
         # ... process battery info
-    
+
     parts = line.split(',')
     if len(parts) == 7:
         # ... process IMU data
@@ -433,6 +445,7 @@ except Exception as e:
 The application implements robust error handling at multiple levels:
 
 1. **UI Level**
+
    - Input validation
    - Confirmation dialogs
    - Error message boxes
@@ -440,12 +453,14 @@ The application implements robust error handling at multiple levels:
    - Log messages
 
 2. **Network Level**
+
    - Connection timeouts
    - Retry mechanisms
    - Graceful disconnection
    - Socket error handling
 
 3. **Data Collection Level**
+
    - Exception catching
    - Error reporting
    - Graceful abortion
@@ -468,7 +483,7 @@ try:
 except Exception as e:
     self.error.emit(f"Error in data collection: {str(e)}")
     self.error_occurred = True
-    
+
 # In UI thread, handle the error signal
 self.worker.error.connect(self.show_error)
 
@@ -489,6 +504,7 @@ Time, Accel_X, Accel_Y, Accel_Z, Gyro_X, Gyro_Y, Gyro_Z, Delta_Time
 ```
 
 Where:
+
 - `Time` is the timestamp (seconds)
 - `Accel_X/Y/Z` are accelerometer readings (m/s²)
 - `Gyro_X/Y/Z` are gyroscope readings (rad/s)
@@ -521,13 +537,13 @@ def handle_outliers(self, sensor_id, median_value, max_outlier):
     """Handle outliers detected in delta time data by automatically redoing the test."""
     self.log_message(f"Sensor {sensor_id}: Delta time outliers detected - median: {median_value:.6f}s, max outlier: {max_outlier:.6f}s", "WARNING")
     self.overall_status_label.setText(f"Outliers detected in Sensor {sensor_id} data. Auto-redoing test...")
-    
+
     # Set flag that we had outliers
     self.had_outliers = True
-    
+
     # Set the redo trigger to prevent multiple redos
     self.redo_triggered = True
-    
+
     # Wait a moment before redoing the test to allow UI updates
     QTimer.singleShot(2000, self.redo_test)
 ```
@@ -543,6 +559,7 @@ Files are named according to a detailed convention that incorporates vehicle inf
 ```
 
 Example:
+
 ```
 WBAFW5C52CD123456_Tesla_Model_Y_2023_15000_All_Wheel_Drive_80_imu_data_001_A1B2C3D4_20230615_120530_sensor1.csv
 ```
@@ -550,11 +567,13 @@ WBAFW5C52CD123456_Tesla_Model_Y_2023_15000_All_Wheel_Drive_80_imu_data_001_A1B2C
 ### CSV Format
 
 Data is saved in CSV format with the following header:
+
 ```
 Time, Accel_X, Accel_Y, Accel_Z, Gyro_X, Gyro_Y, Gyro_Z, Delta_Time
 ```
 
 Sample data rows:
+
 ```
 1623765530.123, 0.015, -0.023, 9.812, 0.001, 0.002, -0.001, 0.01
 1623765530.133, 0.014, -0.025, 9.815, 0.001, 0.003, -0.001, 0.01
@@ -570,15 +589,13 @@ def upload_zip_to_aws(self, zip_filename):
     Uploads the generated zip file to AWS S3.
     """
     try:
-        access_key_id = "AKIAQFLZDVDWBVMKDIWB"
-        secret_access_key = "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"
         bucket_name = "evb-cloud-store"
         s3_key = os.path.basename(zip_filename)
 
         s3 = boto3.client(
             's3',
-            aws_access_key_id=access_key_id,
-            aws_secret_access_key=secret_access_key
+            aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+            aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY")
         )
 
         s3.upload_file(zip_filename, bucket_name, s3_key)
@@ -589,6 +606,7 @@ def upload_zip_to_aws(self, zip_filename):
 ```
 
 The process involves:
+
 1. Creating a ZIP archive of all data files
 2. Connecting to AWS S3 using boto3
 3. Uploading the ZIP file to a predefined bucket
@@ -599,6 +617,7 @@ The process involves:
 ### AWS Credentials
 
 The application currently embeds AWS credentials directly in the code. In a production environment, this should be modified to:
+
 1. Use IAM roles when deployed on AWS infrastructure
 2. Store credentials in environment variables or secure credential storage
 3. Use temporary credentials with limited permissions
@@ -606,6 +625,7 @@ The application currently embeds AWS credentials directly in the code. In a prod
 ### Network Security
 
 The application communicates with sensors and shaker hardware on the local network. Considerations include:
+
 1. Ensuring the application is used on a secure, isolated network
 2. Validating all incoming data from sensors
 3. Implementing secure communication protocols for hardware interactions
@@ -615,6 +635,7 @@ The application communicates with sensors and shaker hardware on the local netwo
 ### Data Collection Optimization
 
 The application is optimized for real-time data collection through:
+
 1. **Parallel Processing** - Concurrent collection from multiple sensors
 2. **Buffered I/O** - Efficient data reading and processing
 3. **Non-blocking Operations** - Maintaining UI responsiveness during collection
@@ -622,6 +643,7 @@ The application is optimized for real-time data collection through:
 ### Memory Management
 
 For long collection sessions with high-frequency IMU data:
+
 1. Data is streamed directly to CSV files to avoid excessive memory usage
 2. Only essential data is kept in memory during processing
 3. System resources are monitored and managed during collection
@@ -631,18 +653,21 @@ For long collection sessions with high-frequency IMU data:
 Potential areas for further development include:
 
 ### Data Analysis Features
+
 - Real-time frequency spectrum analysis
 - Advanced outlier detection algorithms
 - Machine learning-based vibration pattern recognition
 - Comparative analysis between test runs
 
 ### Hardware Support
+
 - Integration with additional sensor types
 - Support for wireless IMU sensors
 - Expanded shaker controller capabilities
 - Battery health estimation features
 
 ### User Experience
+
 - Customizable dashboard views
 - Interactive data visualization
 - Remote monitoring capabilities
@@ -655,22 +680,28 @@ Potential areas for further development include:
 The application implements a specialized protocol for communicating with IMU sensors:
 
 #### Protocol Format
+
 Sensors transmit data in a standardized format over TCP:
+
 ```
 <timestamp>,<accel_x>,<accel_y>,<accel_z>,<gyro_x>,<gyro_y>,<gyro_z>
 ```
 
 Battery status is transmitted separately as:
+
 ```
 BATTERY:<percentage>%
 ```
 
 #### Calibration Period Implementation
+
 The calibration period serves two critical purposes:
+
 1. **Sensor Warm-up**: Allows MEMS components to stabilize as well as establish a strong wifi connection
 2. **Sample Rate Verification**: Establishes timing baseline
 
 The implementation divides collection into distinct phases:
+
 ```python
 # Simplified calibration phase handling
 if in_calibration and elapsed > calibration_time:
@@ -691,6 +722,7 @@ if callback:
 ### Data Processing Algorithms
 
 #### Delta Time Calculation
+
 The application performs precise timing analysis between consecutive samples:
 
 ```python
@@ -705,13 +737,14 @@ for row in data:
     delta = 0.0 if prev_time is None else current_time - prev_time
     modified_data.append(list(row) + [delta])
     prev_time = current_time
-    
+
     timestamps.append(current_time)
     if prev_time is not None:
         deltas.append(delta)
 ```
 
 #### Statistical Outlier Detection
+
 The system uses robust statistical methods to identify sampling irregularities:
 
 1. **Median-based Analysis**: Uses median rather than mean to reduce sensitivity to extreme outliers
@@ -733,6 +766,7 @@ if outliers:
 ### Multithreading Implementation
 
 #### Thread Management Strategy
+
 The application employs a sophisticated threading model to maintain responsiveness:
 
 ```python
@@ -756,6 +790,7 @@ for thread in threads:
 ```
 
 #### Signal-Slot Connection Management
+
 The application implements a comprehensive signal-slot network to coordinate thread communication:
 
 ```python
@@ -772,6 +807,7 @@ self.worker.outliers_detected.connect(self.handle_outliers)
 ```
 
 #### Threaded Battery Status Updates
+
 Battery status updates from the shaker controller are implemented in a non-blocking manner:
 
 ```python
@@ -787,7 +823,7 @@ def _get_shaker_battery_status(self):
     # Use signal to update UI from thread
     if voltage is not None:
         # Update UI in main thread
-        QApplication.instance().postEvent(self, 
+        QApplication.instance().postEvent(self,
             UpdateShakerBatteryEvent(voltage))
         return True
     else:
@@ -800,6 +836,7 @@ def _get_shaker_battery_status(self):
 The IP finder implements a sophisticated network scanning approach:
 
 #### PowerShell Integration
+
 The application uses PowerShell to perform efficient network discovery:
 
 ```python
@@ -810,17 +847,18 @@ if not os.path.exists(script_path):
     self.error.emit(f"PowerShell script not found: {script_path}")
     self.finished.emit()
     return
-    
+
 process = os.popen(f'powershell -ExecutionPolicy Bypass -File "{script_path}"')
 ```
 
 #### Progress Tracking
+
 The IP finder provides detailed progress feedback during different scanning phases:
 
 ```python
 if line.startswith('PROGRESS:'):
     progress_info = line.strip().replace('PROGRESS:', '')
-    
+
     if progress_info == 'PHASE1':
         self.progress.emit("Step 1/2: Pinging addresses...", 0)
     elif progress_info == 'PHASE2':
@@ -839,13 +877,14 @@ if line.startswith('PROGRESS:'):
 ### UI State Management
 
 #### Dual Mode Sensor Management
+
 The application intelligently handles UI state based on sensor mode:
 
 ```python
 def toggle_sensor_mode(self):
     """Toggle between single and dual sensor mode."""
     self.dual_sensor_mode = not self.dual_sensor_mode
-    
+
     # Update UI based on mode
     if self.dual_sensor_mode:
         self.sensor_mode_button.setText("Dual Sensor Mode")
@@ -860,26 +899,27 @@ def toggle_sensor_mode(self):
 ```
 
 #### Dynamic UI Updates
+
 The application dynamically updates UI elements based on collection state:
 
 ```python
 def update_ui_during_collection(self, collecting=True):
     """Enable or disable UI elements based on collection state."""
-    
+
     # Disable inputs during collection
     self.start_collection_button.setEnabled(not collecting)
     self.calibration_time_spinner.setEnabled(not collecting)
     self.sample_time_spinner.setEnabled(not collecting)
     self.save_location_button.setEnabled(not collecting)
-    
+
     # Disable/enable sensor config during collection
     self.sensor_mode_button.setEnabled(not collecting)
-    
+
     # Disable/enable vehicle info fields
     self.vin_entry.setEnabled(not collecting)
     self.make_selector.setEnabled(not collecting)
     # ... and so on for other UI elements
-    
+
     # Show/hide abort button
     self.abort_button.setVisible(collecting)
 ```
@@ -887,6 +927,7 @@ def update_ui_during_collection(self, collecting=True):
 ### Shaker Control Logic
 
 #### Frequency Management
+
 The shaker controller supports both preset and direct frequency settings:
 
 ```python
@@ -907,6 +948,7 @@ def set_direct_frequency(self):
 ```
 
 #### Movement Control
+
 The shaker provides sophisticated movement control options:
 
 ```python
@@ -914,7 +956,7 @@ def calibrate_shaker(self):
     """Calibrate the shaker and set its home position."""
     self.log_message("Calibrating shaker...", "INFO")
     result = self.shaker_controller.calibrate()
-    
+
     if result:
         self.log_message("Shaker calibration complete", "SUCCESS")
         # Enable the auto-raise button once calibration is done
@@ -926,7 +968,7 @@ def auto_raise_shaker(self):
     """Start the auto raise function of the shaker."""
     self.log_message("Starting auto-raise...", "INFO")
     result = self.shaker_controller.auto_raise()
-    
+
     if result:
         self.log_message("Shaker auto-raise initiated", "SUCCESS")
     else:
@@ -936,6 +978,7 @@ def auto_raise_shaker(self):
 ### Data File Management
 
 #### Test ID Generation
+
 The application creates unique test identifiers to ensure data traceability:
 
 ```python
@@ -946,12 +989,13 @@ def generate_test_id(self, length=8):
 ```
 
 #### ZIP File Creation
+
 Data is packaged into ZIP archives for easy management and upload:
 
 ```python
 def save_to_aws(self):
     # ...
-    
+
     try:
         with zipfile.ZipFile(zip_filename, 'w', zipfile.ZIP_DEFLATED) as zipf:
             # Walk through the entire directory structure.
@@ -977,15 +1021,16 @@ def save_to_aws(self):
 The application follows a carefully designed initialization sequence:
 
 1. **License Verification**
+
    ```python
    def main():
        """Main application entry point."""
        app = QApplication(sys.argv)
-       
+
        # Show license dialog first
        license_dialog = LicenseDialog()
        result = license_dialog.exec_()
-       
+
        if result == QDialog.Accepted:
            # License verified, show main application
            window = EVidentApp()
@@ -997,10 +1042,11 @@ The application follows a carefully designed initialization sequence:
    ```
 
 2. **Main Application Initialization**
+
    ```python
    def __init__(self):
        super().__init__()
-       
+
        # Initialize application state
        self.sensor_ip1 = '10.1.10.96'
        self.sensor_ip2 = '10.1.10.171'
@@ -1014,7 +1060,7 @@ The application follows a carefully designed initialization sequence:
        self.had_redos_in_sequence = False  # Keep this as it might be used for other purposes
        self.redo_triggered = False  # Flag to prevent multiple redos
        self.had_outliers = False    # Flag to track if outliers were detected
-       
+
        # Setup UI
        self.initUI()
    ```
@@ -1025,7 +1071,7 @@ The application follows a carefully designed initialization sequence:
        """Initialize the user interface."""
        self.setWindowTitle('EVident Battery Control Panel')
        self.setMinimumWidth(900)
-       
+
        # Apply modern style with gradients
        self.setStyleSheet("""
            QMainWindow {
@@ -1038,20 +1084,20 @@ The application follows a carefully designed initialization sequence:
            }
            /* Additional styling */
        """)
-       
+
        # Create a scrollable container for the content
        scroll_area = QScrollArea()
        scroll_area.setWidgetResizable(True)
-       
+
        content_widget = QWidget()
        scroll_area.setWidget(content_widget)
        self.setCentralWidget(scroll_area)
-       
+
        # Main layout
        main_layout = QVBoxLayout(content_widget)
        main_layout.setSpacing(15)
        main_layout.setContentsMargins(20, 20, 20, 20)
-       
+
        # Add logo and UI elements
        # ...
    ```
@@ -1059,6 +1105,7 @@ The application follows a carefully designed initialization sequence:
 ### Advanced Sensor Data Collection Techniques
 
 #### Data Buffering Strategy
+
 The sensor data collector implements an efficient buffering strategy to handle continuous data streams:
 
 ```python
@@ -1066,39 +1113,39 @@ def collect_data(self, calibration_time, sample_time, callback=None):
     """Collect data from sensor with calibration and sampling periods."""
     if not self.socket:
         return [], None
-        
+
     raw_data = []
     battery_percentage = None
     data_fragment = ""  # Buffer for incomplete lines
     total_time = calibration_time + sample_time
     start_time = time.time()
     in_calibration = True
-    
+
     while time.time() - start_time < total_time:
         try:
             data = self.socket.recv(self.buffer_size)
             if not data:
                 break
-                
+
             # Append new data to any remaining fragment
             data_str = data_fragment + data.decode()
             lines = data_str.split('\n')
-            
+
             # The last line might be incomplete, save it for next iteration
             data_fragment = lines[-1]
-            
+
             # Process all complete lines
             for line in lines[:-1]:
                 if not line.strip():
                     continue
-                
+
                 if line.startswith("BATTERY:"):
                     try:
                         battery_value = float(line.replace("BATTERY:", "").replace("%", ""))
                         battery_percentage = battery_value
                     except:
                         continue
-                
+
                 parts = line.split(',')
                 if len(parts) == 7:
                     try:
@@ -1113,11 +1160,12 @@ def collect_data(self, calibration_time, sample_time, callback=None):
             continue
         except Exception:
             break
-    
+
     return raw_data, battery_percentage
 ```
 
 #### Timestamp Processing
+
 The application performs precise timestamp management for accurate measurements:
 
 ```python
@@ -1127,12 +1175,13 @@ client_elapsed = time.time() - start_time
 # Extract timestamp from sensor data
 timestamp = float(parts[0])
 
-# Both timestamps are used - client time for phase tracking, 
+# Both timestamps are used - client time for phase tracking,
 # sensor time for precise measurement intervals
 raw_data.append((client_elapsed, [timestamp, ax, ay, az, gx, gy, gz]))
 ```
 
 #### Socket Timeout Handling
+
 The collector implements careful timeout handling for robustness:
 
 ```python
@@ -1156,6 +1205,7 @@ except Exception:
 The application implements multiple layers of data quality verification:
 
 #### Timing Analysis
+
 ```python
 # Multiple timing checks are performed:
 # 1. Overall sample count validation
@@ -1174,6 +1224,7 @@ if outliers:
 ```
 
 #### Data Integrity Verification
+
 ```python
 # Validate data integrity during parsing
 try:
@@ -1188,6 +1239,7 @@ except ValueError:
 ```
 
 #### Automatic Recovery
+
 ```python
 # When outliers are detected, data collection is automatically redone
 def redo_test(self):
@@ -1195,7 +1247,7 @@ def redo_test(self):
     # Check if we've already processed a redo to prevent multiple redos
     if not self.redo_triggered:
         return
-    
+
     # If there were previously generated files, remove them
     for sensor_id, filename in self.worker.filenames.items():
         if filename and os.path.exists(filename):
@@ -1204,12 +1256,12 @@ def redo_test(self):
                 self.log_message(f"Removed file from failed test: {filename}", "INFO")
             except Exception as e:
                 self.log_message(f"Warning: Could not remove file: {str(e)}", "WARNING")
-    
+
     # Reset the redo trigger before starting the collection
     self.redo_triggered = False
-    
+
     self.log_message(f"Test will be redone due to timing outliers", "INFO")
-    
+
     # Restart the data collection
     self.start_data_collection()
 ```
@@ -1221,6 +1273,7 @@ def redo_test(self):
 The sensor hardware communicates with the application using a TCP-based protocol. The data protocol format follows this structure:
 
 1. **Battery Status Messages**:
+
    ```
    BATTERY:85%
    ```
@@ -1231,9 +1284,10 @@ The sensor hardware communicates with the application using a TCP-based protocol
    ```
 
 Example:
-   ```
-   1623765530.123,0.015,-0.023,9.812,0.001,0.002,-0.001
-   ```
+
+```
+1623765530.123,0.015,-0.023,9.812,0.001,0.002,-0.001
+```
 
 The `SensorDataCollector` class handles parsing this protocol:
 
@@ -1241,14 +1295,14 @@ The `SensorDataCollector` class handles parsing this protocol:
 for line in lines[:-1]:
     if not line.strip():
         continue
-        
+
     if line.startswith("BATTERY:"):
         try:
             battery_value = float(line.replace("BATTERY:", "").replace("%", ""))
             return battery_value
         except:
             continue
-    
+
     parts = line.split(',')
     if len(parts) == 7:
         try:
@@ -1283,22 +1337,23 @@ PyQt Signals          |                     |
 This architecture is implemented through several key mechanisms:
 
 1. **Thread Creation and Management**
+
    ```python
    def run(self):
        """Main worker method to collect data from sensors."""
        try:
            # Generate timestamp and base filename
            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-           
+
            # Use the test ID from config
            test_id = self.config['test_id']
-           
+
            # Base filename creation
            # ...
-           
+
            # Start threads for each active sensor
            threads = []
-           
+
            # Sensor 1 thread
            if self.config['sensor_ip1']:
                thread1 = threading.Thread(
@@ -1307,7 +1362,7 @@ This architecture is implemented through several key mechanisms:
                )
                threads.append(thread1)
                thread1.start()
-           
+
            # Sensor 2 thread (if in dual mode)
            if self.config['dual_sensor_mode'] and self.config['sensor_ip2']:
                thread2 = threading.Thread(
@@ -1316,7 +1371,7 @@ This architecture is implemented through several key mechanisms:
                )
                threads.append(thread2)
                thread2.start()
-           
+
            # Wait for all threads to complete
            for thread in threads:
                while thread.is_alive():
@@ -1330,6 +1385,7 @@ This architecture is implemented through several key mechanisms:
    ```
 
 2. **Signal-Based Progress Reporting**
+
    ```python
    # Define callback to update progress
    def progress_callback(event_type, *args):
@@ -1382,6 +1438,7 @@ def stop(self):
 ```
 
 This API design provides several advantages:
+
 1. **Simplicity** - REST-like APIs are easy to implement and debug
 2. **Statelessness** - Each command is self-contained
 3. **Compatibility** - Works with any controller that can handle HTTP requests
@@ -1395,7 +1452,7 @@ The application extends Qt's event system with custom events:
 class UpdateShakerBatteryEvent(QEvent):
     """Custom event for updating shaker battery status."""
     EVENT_TYPE = QEvent.registerEventType()
-    
+
     def __init__(self, voltage):
         super().__init__(UpdateShakerBatteryEvent.EVENT_TYPE)
         self.voltage = voltage
@@ -1410,7 +1467,7 @@ def _get_shaker_battery_status(self):
     # Use signal to update UI from thread
     if voltage is not None:
         # Update UI in main thread
-        QApplication.instance().postEvent(self, 
+        QApplication.instance().postEvent(self,
             UpdateShakerBatteryEvent(voltage))
         return True
     else:
@@ -1437,25 +1494,25 @@ def run(self):
     try:
         # Run PowerShell script to find devices
         script_path = os.path.join(os.path.dirname(__file__), 'computers_on_network.ps1')
-        
+
         if not os.path.exists(script_path):
             self.error.emit(f"PowerShell script not found: {script_path}")
             self.finished.emit()
             return
-            
+
         process = os.popen(f'powershell -ExecutionPolicy Bypass -File "{script_path}"')
-        
+
         # Read output line by line to track progress
         target_found = False
-        
+
         while True:
             if self.stop_requested:
                 break
-                
+
             line = process.readline()
             if not line:
                 break
-                
+
             if line.startswith('PROGRESS:'):
                 # Handle progress updates
                 # ...
@@ -1465,7 +1522,7 @@ def run(self):
                 if len(parts) >= 2:
                     computername = parts[0]
                     ip = parts[1]
-                    
+
                     if computername == self.device_name:
                         self.found_ip.emit(ip)
                         target_found = True
@@ -1489,7 +1546,7 @@ for row in data:
     delta = 0.0 if prev_time is None else current_time - prev_time
     modified_data.append(list(row) + [delta])
     prev_time = current_time
-    
+
     timestamps.append(current_time)
     if prev_time is not None:
         deltas.append(delta)
@@ -1556,7 +1613,7 @@ The application includes a comprehensive logging system for troubleshooting and 
 def log_message(self, message, level="INFO"):
     """Log message to the log panel with timestamp and level."""
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    
+
     # Format the log entry with color based on level
     if level == "ERROR":
         formatted_msg = f"<span style='color: #f44336;'>[{timestamp}] ERROR: {message}</span>"
@@ -1568,16 +1625,17 @@ def log_message(self, message, level="INFO"):
         formatted_msg = f"<span style='color: #2196f3;'>[{timestamp}] BATTERY: {message}</span>"
     else:
         formatted_msg = f"<span style='color: #424242;'>[{timestamp}] INFO: {message}</span>"
-    
+
     # Append to log and scroll to bottom
     self.log_text.append(formatted_msg)
     self.log_text.verticalScrollBar().setValue(self.log_text.verticalScrollBar().maximum())
-    
+
     # Also print to console for terminal-based debugging
     print(f"[{level}] {message}")
 ```
 
 This multi-level logging system serves several purposes:
+
 1. **User Feedback** - Contextual colors help users identify important messages
 2. **Debugging Support** - Comprehensive logging for development and support
 3. **Audit Trail** - Complete record of application activities
@@ -1595,23 +1653,24 @@ def create_ui_elements(self):
     # Hostname row
     self.hostname_layout = QHBoxLayout()
     self.hostname_label = QLabel(f"Sensor {self.sensor_id} Hostname:")
-    
+
     self.hostname_entry = QLineEdit()
     self.hostname_entry.setText(self.hostname_default)
     self.hostname_entry.setPlaceholderText(f"Sensor {self.sensor_id} Hostname")
-    
+
     self.auto_find_button = QPushButton("Auto Find")
-    
+
     # Add to hostname layout
     self.hostname_layout.addWidget(self.hostname_label)
     self.hostname_layout.addWidget(self.hostname_entry)
     self.hostname_layout.addWidget(self.auto_find_button)
-    
+
     # IP row
     # ...
 ```
 
 This approach allows for:
+
 1. **Runtime Customization** - UI elements can be modified based on configuration
 2. **Maintainability** - Centralized UI creation logic
 3. **Consistency** - Similar elements share creation patterns
@@ -1626,16 +1685,16 @@ def test_sensor_connection(self, sensor_id):
     """Test connection to a sensor and report result."""
     ip = self.sensor_ip1 if sensor_id == 1 else self.sensor_ip2
     port = 8888  # Default port
-    
+
     try:
         # Create a socket
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.settimeout(2.0)  # 2 second timeout
-        
+
         # Try to connect
         result = s.connect_ex((ip, port))
         s.close()
-        
+
         if result == 0:
             self.log_message(f"Sensor {sensor_id} ({ip}:{port}) is reachable", "INFO")
             return True
@@ -1648,6 +1707,7 @@ def test_sensor_connection(self, sensor_id):
 ```
 
 These testing functions provide:
+
 1. **Pre-Collection Validation** - Verify hardware connectivity before test start
 2. **Diagnostics** - Detailed error reporting for troubleshooting
 3. **User Confidence** - Clear confirmation of operational hardware
@@ -1657,6 +1717,7 @@ These testing functions provide:
 The EVident Battery Control Panel represents a sophisticated integration of hardware control, data acquisition, and user interface design. The modular architecture and careful attention to multithreading and error handling result in a robust application capable of reliably collecting high-precision IMU data while maintaining a responsive user experience.
 
 Key technical highlights include:
+
 - Scalable support for multiple simultaneous sensors
 - Sophisticated data quality validation
 - Automatic recovery from data collection issues

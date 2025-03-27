@@ -22,6 +22,11 @@ from PIL import Image
 import zipfile
 import numpy as np
 import boto3
+import os
+from dotenv import load_dotenv
+
+# Load .env file
+load_dotenv()
 
 try:
     import matplotlib.pyplot as plt
@@ -2260,15 +2265,13 @@ class EVidentApp(QMainWindow):
         Uploads the generated zip file to AWS S3.
         """
         try:
-            access_key_id = "AKIAQFLZDVDWBVMKDIWB"
-            secret_access_key = "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"
             bucket_name = "evb-cloud-store"
             s3_key = os.path.basename(zip_filename)
 
             s3 = boto3.client(
                 's3',
-                aws_access_key_id=access_key_id,
-                aws_secret_access_key=secret_access_key
+                aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+                aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY")
             )
 
             s3.upload_file(zip_filename, bucket_name, s3_key)
