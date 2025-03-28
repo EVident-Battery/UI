@@ -1,50 +1,73 @@
-How to use the UI
+# User Interface Guide
 
-The UI is composes of different panels. The configuration panel, the vehicle information panel, the data collection panel, and the activity log panel.
+The application interface consists of four main panels: Configuration, Vehicle Information, Data Collection, and Activity Log. This guide explains how to use each panel effectively.
 
+## Shaker Configuration
 
-Shaker Configuration:
-    There a few different sections:
-    The shaker battery and the refresh button which updates the battery voltage. 
-    The drop down with different rotations per second (RPS) values. The used should be set to 10.33
-    Next is an entry where you can enter a number directly, up to 2 decimal places.
-    Next is the start, stop, and home button.
-    The start button will use the value from the direct entry if it is not empty, otherwise it will use the value from the drop down.
-    The stop button will stop the shaker.
-    The home button will return the shaker tip to the home position (this is the position that you set when it asks you to push the head down during calibration)
-    Next is the Controller IP. You can either type it and and click submit IP or just press auto find which will find the shaker on the network automatically and enter its IP.
-    The next three buttons are Calibration/Set Home, Auto Up, and Down
-    The Auto Up button will be greyed out if you have no yet calibrated the shaker.
-    When you calibrate the shaker, it will ensure that the shaker tip is free to move up and down without hitting anything.
-    Then it will ask you to push the head down and click ok to set the home position.
-    The Auto button will then become available and clicking it will auotmatically move the shaker up until the tip hits the botton of the battery pack.
-    The tip will tap the battery pack and then move down and tap it again which sets up the shaker for use. 
-    When you need to lower the shaker after use, click and hold the down button until you're able to remove the shaker from under the vehicle.
-    You should start the shaker before you start the data collection.
+The Shaker Configuration panel contains several important controls:
 
-Sensor Configuration:
-    The first section allows you to set the number of sensors between 1 and 2
-    Next you can enter the sensor hostname ID which will be used for the autofind button. If you're not using auto find this can be left as is.
-    Next you can type the IP address of the first sensor and click submit IP. The battery will stay N/A until you start the data collection.
-    Repeate for the second sensor.
+- **Battery Status**: Displays the current battery voltage with a refresh button to update readings.
+- **Rotation Speed Controls**: 
+  - A dropdown menu with preset Rotations Per Second (RPS) values (recommended: 10.33)
+  - A direct entry field for custom values (up to 2 decimal places)
+- **Operation Controls**:
+  - Start: Initiates the shaker using either the direct entry value or the dropdown selection. Direct entry takes precedence over dropdown if entered.
+  - Stop: Halts shaker operation
+  - Home: Returns the shaker tip to the calibrated home position
+- **Connection Settings**:
+  - Controller IP field with manual entry and submission option
+  - Auto Find button to automatically detect the shaker on the network
+- **Position Controls**:
+  - Calibration/Set Home: Initiates the calibration sequence. The system will verify the shaker has full range of motion, then prompt you to set the home position.
+  - Auto Up: Automatically positions the shaker (available after calibration)
+  - Down: Press and hold to lower the shaker
 
-Vehicle Information:
-    This sections allows you to enter the VIN, Make, Model, Year, Trim, Mileage, and current SOC%
-    You can also enter a file suffix which will add a unique name to the end of the file name if you require it.
-    The Test ID us an automatically generated 10 digit number that is used to identify the test. This can be auto emailed to the email in the data collection section. It's used on the EVident Battery website to see the results of the test.
+**Important**: Always start the shaker before beginning data collection. During calibration, the system will verify the shaker has full range of motion, then prompt you to set the home position. The Auto Up function will precisely position the shaker tip against the battery pack for optimal testing.
 
-Data Collection:
-    Here you can change the sample time, set your save location, send the results to EVident Battery for automatic analysis, auto email the test ID to the email entered, and start the collection.
-    First ensure that you started the shaker.
-    After you set the save location you can click start collection and it will first do a 5 second calibration and then start collecting data. If the software identifies any sensor anomoalies it will automatically reject the data and do another collection.
-    After you finish data collection you can click the "Save to AWS" button and it will zip the data in the save location and upload it to the AWS server. Ensure that only information you want uploaded to AWS is in the save location folder.
-    If you want the Test ID to be emailed to you, enter your email and submit. This ID will be emailed to you for your records. 
-    There are convient progress bars to show you the status of the data collection.
-    
-    After your first collection you can also scroll up to the Sensor Configuration section to see the battery % of the sensors. 
+## Sensor Configuration
 
-Actvity Log:
-    This is a complete log of everything that happens in the software. 
+This panel allows you to configure the sensors for data collection:
+
+- Set the number of sensors (1-2)
+- Enter the sensor hostname ID for auto-detection. If not using auto-detection this can be left as is.
+- Manually configure sensor IP addresses
+- Monitor sensor battery levels (visible after data collection begins)
+
+## Vehicle Information
+
+Use this panel to record essential vehicle data:
+
+- VIN
+- Make
+- Model
+- Year
+- Trim
+- Mileage
+- Current State of Charge (SOC%)
+- Optional file suffix for unique identification
+
+The system automatically generates a 10-digit Test ID for each test session. This ID can be used to access test results on the EVident Battery website and can be automatically emailed to your specified email.
+
+## Data Collection
+
+This panel controls the testing process:
+
+1. Configure sample time and save location
+2. Ensure the shaker is running
+3. Click "Start Collection" to begin the process
+   - The system will perform a 5-second calibration
+   - Data collection will commence automatically
+   - The system will detect sensor anomalies and restart collection if necessary
+4. Progress bars indicate the status of data collection
+5. After collection, you can:
+   - Save data to AWS by clicking "Save to AWS" (compresses and uploads data). **Important** Ensure that only information you want uploaded to AWS is in the save location folder.
+   - Request email notification with the Test ID
+
+**Note**: After the first collection cycle, sensor battery levels will be visible in the Sensor Configuration panel.
+
+## Activity Log
+
+The Activity Log panel provides a comprehensive record of all system operations and events. This log is valuable for troubleshooting and maintaining a record of testing procedures.
 
 
 
